@@ -1,40 +1,22 @@
-from flask import Flask
-from flask_swagger_ui import get_swaggerui_blueprint
-from flask_marshmallow import Marshmallow
-from flask_cors import CORS
-from routs import student, teacher
-from waitress import serve
-from flask_socketio import SocketIO, emit
-import socketio
+from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
-ma = Marshmallow(app)
-app.config['SECRET_KEY'] = 'your_secret_key'
-socketio = SocketIO(app, cors_allowed_origins="*")
-cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
-SWAGGER_URL = '/swagger'
-API_URL = '/static/swagger.json'
-SWAGGER_BLUEPRINT = get_swaggerui_blueprint(SWAGGER_URL, API_URL, config={'app_name': 'LPNU students'})
-app.register_blueprint(SWAGGER_BLUEPRINT, url_prefix=SWAGGER_URL)
-app.register_blueprint(student)
-app.register_blueprint(teacher)
+# Dummy data for products
+products = [
+    {"id": 1, "name": "Product 1", "price": 20},
+    {"id": 2, "name": "Product 2", "price": 30},
+    {"id": 3, "name": "Product 3", "price": 30}
+]
 
+@app.route('/')
+def index():
+    return render_template('index.html', products=products)
 
-@socketio.on('connect')
-def handle_connect():
-    print(f"User connected")
-    socketio.emit('my response', {'data': 'Connected'})
+@app.route('/add_to_cart', methods=['POST'])
+def add_to_cart():
+    product_id = request.json.get('product_id')
+    return jsonify({"message": f"Product {product_id} added to cart!"})
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    print(f"User disconnected")
-    
-@socketio.on('message')
-def handle_message(message):
-    print(f"Message: {message}")
-    emit('chat', {'data': message}, brodcast=True)
-
-    
-if __name__ == "__main__":
-    socketio.run(app, debug=True, host='127.0.0.1', port=5000, allow_unsafe_werkzeug=True)
+if __name__ == '__main__':
+    app.run(debug=True)
